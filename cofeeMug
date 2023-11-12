@@ -1,5 +1,12 @@
 
-#include <GL/glut.h>
+
+#include <iostream>
+#include <cstdlib>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 void drawCoffeeMug() {
     // Draw the body of the mug using glutSolidCylinder
@@ -14,28 +21,39 @@ void drawCoffeeMug() {
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
-    gluLookAt(3, 3, 3, 0, 0, 0, 0, 1, 0);
 
-    // Apply transformations here
-    glPushMatrix();
-    glTranslatef(0.0, 0.5, 0.0);  // Translate to the desired position
-    glRotatef(45.0, 1.0, 0.0, 0.0);  // Rotate around the x-axis
-    glScalef(1.0, 1.0, 1.0);  // Scale the object
-    // Debug the body of the mug
-    glColor3f(0.5, 0.5, 0.5);  // Gray color
+    // Use GLM for perspective and view matrix
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1.0f, 1.0f, 100.0f);
+    glm::mat4 view = glm::lookAt(glm::vec3(3, 3, 3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    glMultMatrixf(glm::value_ptr(projection));
+    glMultMatrixf(glm::value_ptr(view));
+
+    // Apply transformations using GLM
+    glm::mat4 model = glm::mat4(1.0f);
+
+    // Body of the mug
+    model = glm::translate(model, glm::vec3(0.0, 0.5, 0.0));
+    model = glm::rotate(model, glm::radians(45.0f), glm::vec3(1.0, 0.0, 0.0));
+    model = glm::scale(model, glm::vec3(1.0, 1.0, 1.0));
+    glMultMatrixf(glm::value_ptr(model));
+
+    // Draw the body of the mug
+    glColor3f(0.5, 0.5, 0.5);
     glutSolidCylinder(1.0, 2.0, 50, 50);
-    glPopMatrix();
+
+    // Reset transformation matrix for the handle
+    glLoadIdentity();
 
     // Handle transformations
-    glPushMatrix();
-    glTranslatef(1.5, 0.0, 0.0);  // Translate to the position for the handle
-    glColor3f(0.0, 0.0, 0.0);  // Black color
+    model = glm::translate(model, glm::vec3(1.5, 0.0, 0.0));
+    glMultMatrixf(glm::value_ptr(model));
+
+    // Draw the handle
+    glColor3f(0.0, 0.0, 0.0);
     glutSolidTorus(0.2, 0.5, 50, 50);
-    glPopMatrix();
 
     glutSwapBuffers();
 }
-
 
 void reshape(int w, int h) {
     glViewport(0, 0, w, h);
@@ -45,15 +63,39 @@ void reshape(int w, int h) {
     glMatrixMode(GL_MODELVIEW);
 }
 
-int main(int argc, char** argv) {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutCreateWindow("OpenGL Coffee Mug");
+int main() {
+    if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL Coffee Mug", nullptr, nullptr);
+    if (!window) {
+        std::cerr << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return EXIT_FAILURE;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    if (glewInit() != GLEW_OK) {
+        std::cerr << "Failed to initialize GLEW" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     glEnable(GL_DEPTH_TEST);
 
-    glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
+    glfwSetFramebufferSizeCallback(window, reshape);
 
-    glutMainLoop();
+    while (!glfwWindowShouldClose(window)) {
+        display();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwTerminate();
     return 0;
 }

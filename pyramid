@@ -1,5 +1,11 @@
-#include <GL/glut.h>
-#include <vector>
+
+#include <iostream>
+#include <cstdlib>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 GLuint pyramidVAO;
 GLuint vertexBuffer;
@@ -8,21 +14,21 @@ GLuint indexBuffer;
 
 void setupBuffers() {
     // Vertices
-    std::vector<float> vertices = {
-        0.0, 1.0, 0.0,  // Top
-        -1.0, -1.0, 1.0,  // Bottom left
-        1.0, -1.0, 1.0,   // Bottom right
-        1.0, -1.0, -1.0,  // Top right
-        -1.0, -1.0, -1.0  // Top left
+    std::vector<glm::vec3> vertices = {
+        glm::vec3(0.0f, 1.0f, 0.0f),  // Top
+        glm::vec3(-1.0f, -1.0f, 1.0f),  // Bottom left
+        glm::vec3(1.0f, -1.0f, 1.0f),   // Bottom right
+        glm::vec3(1.0f, -1.0f, -1.0f),  // Top right
+        glm::vec3(-1.0f, -1.0f, -1.0f)  // Top left
     };
 
     // Colors
-    std::vector<float> colors = {
-        1.0, 0.0, 1.0,  // Pink (Top)
-        1.0, 1.0, 0.0,  // Yellow (Bottom left)
-        0.0, 0.0, 1.0,  // Blue (Bottom right)
-        0.0, 1.0, 0.0,  // Green (Top right)
-        1.0, 0.5, 0.8   // Pink (Top left)
+    std::vector<glm::vec3> colors = {
+        glm::vec3(1.0f, 0.0f, 1.0f),  // Pink (Top)
+        glm::vec3(1.0f, 1.0f, 0.0f),  // Yellow (Bottom left)
+        glm::vec3(0.0f, 0.0f, 1.0f),  // Blue (Bottom right)
+        glm::vec3(0.0f, 1.0f, 0.0f),  // Green (Top right)
+        glm::vec3(1.0f, 0.5f, 0.8f)   // Pink (Top left)
     };
 
     // Indices
@@ -40,13 +46,13 @@ void setupBuffers() {
 
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(0);
 
     glGenBuffers(1, &colorBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(glm::vec3), colors.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(1);
 
@@ -63,39 +69,59 @@ void drawPyramid() {
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Apply perspective projection - Moved here
+    // Apply perspective projection
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1.0f, 1.0f, 10.0f);
     glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45.0, 1.0, 1.0, 10.0);
-    
+    glLoadMatrixf(glm::value_ptr(projection));
+
+    // Apply modelview transformation
+    glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    
-    gluLookAt(2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    glLoadMatrixf(glm::value_ptr(view));
 
     drawPyramid();
 
-    glutSwapBuffers();
+    glfwSwapBuffers(window);
 }
 
-
-void reshape(int width, int height) {
+void reshape(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-int main(int argc, char** argv) {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutCreateWindow("OpenGL Pyramid Example");
+int main() {
+    if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL Pyramid Example", nullptr, nullptr);
+    if (!window) {
+        std::cerr << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return EXIT_FAILURE;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    if (glewInit() != GLEW_OK) {
+        std::cerr << "Failed to initialize GLEW" << std::endl;
+        return EXIT_FAILURE;
+    }
 
     glEnable(GL_DEPTH_TEST);
 
     setupBuffers();
 
-    glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
+    glfwSetFramebufferSizeCallback(window, reshape);
 
-    glutMainLoop();
+    while (!glfwWindowShouldClose(window)) {
+        display();
+        glfwPollEvents();
+    }
 
+    glfwTerminate();
     return 0;
 }
