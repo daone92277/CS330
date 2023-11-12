@@ -1,0 +1,59 @@
+
+#include <GL/glut.h>
+
+void drawCoffeeMug() {
+    // Draw the body of the mug using glutSolidCylinder
+    glColor3f(0.5, 0.5, 0.5);  // Gray color
+    glutSolidCylinder(1.0, 2.0, 50, 50);
+
+    // Draw the handle using glutSolidTorus
+    glTranslatef(0.75, 0.0, 0.0);  // Translate to the position for the handle
+    glutSolidTorus(0.2, 0.5, 50, 50);
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+    gluLookAt(3, 3, 3, 0, 0, 0, 0, 1, 0);
+
+    // Apply transformations here
+    glPushMatrix();
+    glTranslatef(0.0, 0.5, 0.0);  // Translate to the desired position
+    glRotatef(45.0, 1.0, 0.0, 0.0);  // Rotate around the x-axis
+    glScalef(1.0, 1.0, 1.0);  // Scale the object
+    // Debug the body of the mug
+    glColor3f(0.5, 0.5, 0.5);  // Gray color
+    glutSolidCylinder(1.0, 2.0, 50, 50);
+    glPopMatrix();
+
+    // Handle transformations
+    glPushMatrix();
+    glTranslatef(1.5, 0.0, 0.0);  // Translate to the position for the handle
+    glColor3f(0.0, 0.0, 0.0);  // Black color
+    glutSolidTorus(0.2, 0.5, 50, 50);
+    glPopMatrix();
+
+    glutSwapBuffers();
+}
+
+
+void reshape(int w, int h) {
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(45.0, (float)w / (float)h, 1.0, 100.0);
+    glMatrixMode(GL_MODELVIEW);
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutCreateWindow("OpenGL Coffee Mug");
+    glEnable(GL_DEPTH_TEST);
+
+    glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
+
+    glutMainLoop();
+    return 0;
+}

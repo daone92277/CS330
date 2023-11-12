@@ -1,0 +1,103 @@
+ok awesome, can you please now anlayze this code and tell me whether iot will properly create a 3 pyramid?
+
+#include <GL/glut.h>
+#include <vector>
+
+GLuint pyramidVAO;
+GLuint vertexBuffer;
+GLuint colorBuffer;
+GLuint indexBuffer;
+
+void setupBuffers() {
+    // Vertices
+    std::vector<float> vertices = {
+        0.0, 1.0, 0.0,  // Top
+        -1.0, -1.0, 1.0,  // Bottom left
+        1.0, -1.0, 1.0,   // Bottom right
+        1.0, -1.0, -1.0,  // Top right
+        -1.0, -1.0, -1.0  // Top left
+    };
+
+    // Colors
+    std::vector<float> colors = {
+        1.0, 0.0, 1.0,  // Pink (Top)
+        1.0, 1.0, 0.0,  // Yellow (Bottom left)
+        0.0, 0.0, 1.0,  // Blue (Bottom right)
+        0.0, 1.0, 0.0,  // Green (Top right)
+        1.0, 0.5, 0.8   // Pink (Top left)
+    };
+
+    // Indices
+    std::vector<unsigned int> indices = {
+        0, 1, 2,  // Top face
+        0, 2, 3,  // Right face
+        0, 3, 4,  // Bottom face
+        0, 4, 1,  // Left face
+        1, 2, 3,  // Front face
+        1, 3, 4   // Back face
+    };
+
+    glGenVertexArrays(1, &pyramidVAO);
+    glBindVertexArray(pyramidVAO);
+
+    glGenBuffers(1, &vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(0);
+
+    glGenBuffers(1, &colorBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(1);
+
+    glGenBuffers(1, &indexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+}
+
+void drawPyramid() {
+    glBindVertexArray(pyramidVAO);
+    glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Apply perspective projection - Moved here
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(45.0, 1.0, 1.0, 10.0);
+    
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    
+    gluLookAt(2.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+
+    drawPyramid();
+
+    glutSwapBuffers();
+}
+
+
+void reshape(int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutCreateWindow("OpenGL Pyramid Example");
+
+    glEnable(GL_DEPTH_TEST);
+
+    setupBuffers();
+
+    glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
+
+    glutMainLoop();
+
+    return 0;
+}
